@@ -82,6 +82,9 @@ export default defineConfig([
     entry: {
       'workspace-root': 'src/client/workspace-root.ts',
       'auto-open': 'src/client/auto-open.ts',
+      // The narrow-screen sheet is a pure decision (a CSS string) that carries
+      // a regression guard: see test/narrow-styles.mjs.
+      'narrow-styles': 'src/client/narrow-styles.ts',
     },
     outDir: 'lib',
     format: ['esm'],
