@@ -316,3 +316,68 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/*
+ * The conversation-header board button (injected DOM, see header-entry.ts).
+ *
+ * It belongs to the conversation's own header chrome, so it is hidden while
+ * the shell replaces that chrome with a phone top bar — the Sidebar is not a
+ * column below the same breakpoint, and the button would sit under the wrong
+ * header. `display` lives here rather than in the element's inline style, so
+ * the media query can actually win (inline styles beat classes).
+ */
+.headerEntry {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary, currentColor);
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.headerEntry:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, 0.05));
+}
+
+@media (max-width: 767px) {
+  .headerEntry {
+    display: none;
+  }
+}
+
+/*
+ * The navigation Sidebar's 画板 row (injected DOM, see narrow-entry.ts).
+ * Shown only where the Sidebar is a full-screen drawer: on a wide viewport the
+ * header control already opens the board and a second entry would be noise.
+ */
+.entry {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 7px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 4px;
+}
+
+.entryIcon {
+  display: inline-flex;
+  color: var(--dsh-color-primary, #4080ff);
+}
+
+@media (max-width: 767px) {
+  .entry {
+    display: flex;
+  }
+}

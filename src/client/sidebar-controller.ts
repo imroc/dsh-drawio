@@ -61,6 +61,30 @@ export interface SidebarRightFace {
 }
 
 /**
+ * The viewport width below which the Sidebar stops being a column and becomes
+ * a full-screen panel. It is the Sidebar's OWN breakpoint (`RightbarSeat`:
+ * `autoFullscreen = viewportWidth < 768`), not one this plugin invents.
+ */
+export const SIDEBAR_FULLSCREEN_PX = 768
+
+/**
+ * The frame's panel-action face this plugin consumes (`ctx.layout`).
+ *
+ * Only the one action is declared: the Sidebar's own seats are what normally
+ * announce "the panel wants to be shown", and this plugin has no seat of its
+ * own to announce from — it borrows the frame's action to do so.
+ */
+export interface FrameLayoutFace {
+  /**
+   * Show the frame's right panel.
+   * @param track - whether the panel should also claim a grid track (false for
+   *   the full-screen presentation the Sidebar uses on narrow viewports).
+   * @param fullscreen - whether the panel takes the viewport.
+   */
+  openRightbar?: (track: boolean, fullscreen: boolean) => void
+}
+
+/**
  * Opens and closes this plugin's tab in the right Sidebar.
  *
  * Every method is defensive: the Sidebar is another plugin's fiber, a session
@@ -77,10 +101,13 @@ export class DrawioSidebarController {
   /**
    * @param getFace - reads the Sidebar service inside the injected scope; it
    *   may only be touched there (see sidebar-tab.ts).
+   * @param getLayout - reads the frame's panel-action face (`ctx.layout`),
+   *   which is how a panel is revealed from outside the seat.
    * @param kind - the tab kind to open.
    */
   constructor(
     private readonly getFace: () => SidebarRightFace | undefined,
+    private readonly getLayout: () => FrameLayoutFace | undefined,
     private readonly kind: string,
   ) {}
 
@@ -99,9 +126,20 @@ export class DrawioSidebarController {
   }
 
   /**
-   * Show the 画板: focus the open tab, or open one when there is none. The
-   * Sidebar expands in the same step (`openTab`), so a collapsed rail becomes
-   * the panel showing the board.
+   * Show the 画板: focus the open tab, or open one when there is none.
+   *
+   * Two paths, because a narrow viewport needs one extra step:
+   *
+   * - **Width where the Sidebar is a column** (`>= 768px`): `openTab` both
+   *   opens and expands — the frame gives the panel a real track, done.
+   * - **Narrower than that**: the Sidebar draws itself as a *full-screen*
+   *   panel (`RightbarSeat.autoFullscreen`) and takes no column track at all,
+   *   so the frame's panel width solves to 0. The frame only renders that
+   *   panel while it believes the column is shown, and it re-renders when its
+   *   own panel state changes — `openTab` does that, but a reveal that arrives
+   *   while the seat is not yet mounted has nothing to write into. So the
+   *   narrow path nudges the frame directly through `ctx.layout.openRightbar`
+   *   (the same call the seat makes) and retries once on the next frame.
    */
   reveal(): void {
     const face = this.getFace()
@@ -121,7 +159,42 @@ export class DrawioSidebarController {
       this.queueRetry()
       void error
     }
+    this.nudgeNarrowFrame()
   }
+
+  /**
+ * Tell the frame to show the right panel, for viewports where the Sidebar
+ * itself draws full-screen and therefore owns no grid track.
+ *
+ * Guarded by {@link SIDEBAR_FULLSCREEN_PX} rather than called unconditionally:
+ * on a wide viewport the seat's own effect already reports the presentation,
+ * and nudging it there would expand a panel nobody asked to show.
+ *
+ * Retried once on the next frame — a reveal that fires before the seat's first
+ * commit leaves nothing behind for the seat to read.
+ */
+  private nudgeNarrowFrame(): void {
+    const layout = this.getLayout()
+    if (layout?.openRightbar === undefined) return
+    const width = typeof window === 'undefined' ? Number.POSITIVE_INFINITY : window.innerWidth
+    if (width >= SIDEBAR_FULLSCREEN_PX) return
+    const open = (): void => {
+      try {
+        // `track: false` matches what the seat reports for this presentation:
+        // the panel takes the viewport and claims no grid column.
+        layout.openRightbar?.(false, true)
+      } catch (error) {
+        void error
+      }
+    }
+    open()
+    try {
+      requestAnimationFrame(() => { open() })
+    } catch {
+      // No frame clock (a test host): the single attempt stands.
+    }
+  }
+
 
   /** Toggle the 画板: collapse the Sidebar when it is showing, reveal it otherwise. */
   toggle(): void {

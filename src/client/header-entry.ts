@@ -26,6 +26,7 @@
 import type { DrawioSidebarController } from './sidebar-controller.ts'
 import { t } from './i18n.ts'
 import { ICON_SVG } from './board.tsx'
+import styles from './board.module.css'
 
 /** Stable attribute identifying the injected header button. */
 export const HEADER_ENTRY_SELECTOR = '[data-dsh-drawio-header]'
@@ -47,34 +48,19 @@ function createEntry(controller: DrawioSidebarController): HTMLButtonElement {
   const entry = document.createElement('button')
   entry.type = 'button'
   entry.dataset.dshDrawioHeader = ''
+  // All presentation lives in the stylesheet (board.module.css `.headerEntry`),
+  // including the narrow-screen `display: none`: an inline `display` would beat
+  // the media query, and the button must not show where the shell swaps the
+  // conversation header for its own phone top bar.
+  entry.className = styles.headerEntry ?? ''
   entry.setAttribute('aria-label', t('header.aria'))
   entry.title = t('header.open')
-  entry.style.cssText = [
-    'width:28px',
-    'height:28px',
-    'flex:none',
-    'display:inline-flex',
-    'align-items:center',
-    'justify-content:center',
-    'padding:0',
-    'border:none',
-    'border-radius:999px',
-    'background:transparent',
-    'color:var(--dsw-alias-label-secondary, currentColor)',
-    'cursor:pointer',
-  ].join(';')
   entry.innerHTML = ICON_SVG
   const glyph = entry.firstElementChild
   if (glyph instanceof SVGElement) {
     glyph.setAttribute('width', '16')
     glyph.setAttribute('height', '16')
   }
-  entry.addEventListener('mouseenter', () => {
-    entry.style.background = 'var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,0.05))'
-  })
-  entry.addEventListener('mouseleave', () => {
-    entry.style.background = 'transparent'
-  })
   entry.addEventListener('click', () => {
     controller.reveal()
   })

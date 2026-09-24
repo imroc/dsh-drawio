@@ -25,7 +25,9 @@ import { noteActivityRoot } from './workspace-root.ts'
 import { shouldAutoOpen } from './auto-open.ts'
 import { mountHeaderEntry } from './header-entry.ts'
 import { mountDrawioSidebarTab, TAB_KIND } from './sidebar-tab.tsx'
-import { DrawioSidebarController, type SidebarRightFace } from './sidebar-controller.ts'
+import { installNarrowStyles } from './narrow-styles.ts'
+import { mountNarrowEntry } from './narrow-entry.ts'
+import { DrawioSidebarController, type FrameLayoutFace, type SidebarRightFace } from './sidebar-controller.ts'
 import { DrawioApi, type DrawioRemote } from './api.ts'
 import { ZH, EN } from './locales.ts'
 import type { SessionListStore } from './board.tsx'
@@ -85,9 +87,11 @@ export async function apply(ctx: ClientContext): Promise<void> {
 
   // The Sidebar service is read inside `ctx.inject`: at apply time the Sidebar
   // has not provided it yet, and reading it there would silently leave the tab
-  // type unregistered (see sidebar-tab.ts).
+  // type unregistered (see sidebar-tab.ts). The frame's panel-action face is
+  // read the same way, and for the same reason.
   let face: SidebarRightFace | undefined
-  const controller = new DrawioSidebarController(() => face, TAB_KIND)
+  let layout: FrameLayoutFace | undefined
+  const controller = new DrawioSidebarController(() => face, () => layout, TAB_KIND)
   const disposers: Array<() => void> = []
 
   ctx.inject(['sidebarRight'], (sidebarCtx) => {
@@ -98,6 +102,13 @@ export async function apply(ctx: ClientContext): Promise<void> {
     }
     face = service
     ctx.effect(() => () => { face = undefined }, 'dsh-drawio: sidebar face')
+  })
+
+  ctx.inject(['layout'], (layoutCtx) => {
+    const service = (layoutCtx as unknown as { layout?: FrameLayoutFace }).layout
+    if (service === undefined) return
+    layout = service
+    ctx.effect(() => () => { layout = undefined }, 'dsh-drawio: frame layout face')
   })
 
   // Tab type + its two seats. Split from the header entry below so a failure
@@ -118,6 +129,19 @@ export async function apply(ctx: ClientContext): Promise<void> {
   } catch (error) {
     console.error('[dsh-drawio] mounting the header entry failed:', error)
   }
+
+  // The phone's way in. Hidden by the stylesheet wherever the header control
+  // exists, so this costs a wide viewport nothing.
+  try {
+    disposers.push(mountNarrowEntry(controller))
+  } catch (error) {
+    console.error('[dsh-drawio] mounting the navigation entry failed:', error)
+  }
+
+  // The narrow-screen fix-up: the shell's mobile layout collapses the frame's
+  // panel column, which is where the Sidebar's full-screen panel anchors. See
+  // narrow-styles.ts.
+  disposers.push(installNarrowStyles())
 
   // Agent drawio activity -> point the board at the file the agent is drawing,
   // and (live events only, screen permitting) reveal the board. The path goes

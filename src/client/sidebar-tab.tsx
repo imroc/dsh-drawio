@@ -29,6 +29,7 @@ import type { JSX } from 'react'
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
 import type {} from '@deepseek-ai/dsh-client-ui-slots'
 import { t } from './i18n.ts'
+import { useIsNarrow } from './narrow.ts'
 import { BoardView, ICON_SVG, type SessionListStore } from './board.tsx'
 import type { DrawioRemote } from './api.ts'
 import type { DrawioSidebarController } from './sidebar-controller.ts'
@@ -76,32 +77,31 @@ export interface DrawioTabDeps {
 }
 
 /**
- * The tab body: the board itself, sized to the Sidebar's pane.
+ * The tab body: the board itself, sized to the Sidebar's pane (or the whole
+ * viewport, on a phone — the Sidebar's own full-screen presentation).
  *
  * The board stays mounted for as long as the tab exists (`keepMounted`), so
  * switching to another Sidebar tab and back keeps the selected file, the
  * unsaved draft and the zoom — a tab that lost its state on every switch would
  * be worse than the old column.
  *
- * The board's own toolbar close control is dropped here: the Sidebar's tab
- * strip already carries a close button for this tab, and two close buttons on
- * the same surface is one too many. It stays wired on a standalone host (no
- * seat props), where nothing else can close the board.
+ * The close control follows the same split as the layout: on a wide viewport
+ * the tab strip already carries one, so the board omits its own; below the
+ * breakpoint the panel is the whole screen and the toolbar control is the
+ * exit the user is looking at.
  *
  * @param props - the seat's props.
  * @returns the board.
  */
 function TabBody(props: TabSeatProps & DrawioTabDeps): JSX.Element {
-  // A seat-supplied body always carries this hook; its absence means a host
-  // that mounted the board outside the Sidebar, where the board's own close
-  // control is the only way out.
-  const onClose = props.useTabInfo !== undefined ? undefined : (): void => { props.controller.close() }
+  const narrow = useIsNarrow()
   return (
     <BoardView
       makeApi={props.makeApi}
       sessions={props.sessions}
       fontFamily={props.fontFamily}
-      onClose={onClose}
+      onClose={narrow ? (): void => { props.controller.close() } : undefined}
+      narrowClose={narrow}
     />
   )
 }

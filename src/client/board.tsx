@@ -37,17 +37,24 @@ export function BoardView({
   sessions,
   fontFamily,
   onClose,
+  narrowClose = false,
 }: {
   /** Binds one workspace root to a fresh API client (rebuilt on session switch). */
   makeApi: (root: string) => DrawioRemote
   sessions: SessionListStore
   fontFamily: string
   /**
-   * Collapse the board. Optional: the board is still usable without a way to
-   * close it, but on a phone the close control below is the ONLY exit (the
-   * sidebar row that toggles the board lives in the drawer there).
+   * Collapse or close the board, whenever the host has a way to do it.
+   *
+   * When `narrowClose` is set this control renders **only on a narrow
+   * viewport** (CSS-gated, so no resize listener): below the Sidebar's
+   * full-screen breakpoint the board covers the whole screen and the tab
+   * strip's own close button is the only exit — on a phone that strip is
+   * reachable, but the control has to be where the user is looking.
    */
   onClose?: () => void
+  /** Render the close control only below the Sidebar's full-screen breakpoint. */
+  narrowClose?: boolean
 }): JSX.Element {
   const rootStore = useMemo(() => new WorkspaceRootStore({ sessions }), [sessions])
   useEffect(() => {
@@ -700,7 +707,7 @@ export function BoardView({
         {onClose !== undefined && (
           <button
             type="button"
-            className={styles.btn}
+            className={narrowClose ? `${styles.btn} ${styles.closeNarrowOnly}` : styles.btn}
             data-dsh-drawio-close=""
             title={t('close.tip')}
             onClick={onClose}

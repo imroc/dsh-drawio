@@ -5,6 +5,7 @@
  */
 
 export const ZH = {
+  'entry.label': 'Drawio 画板',
   'tab.title': 'Drawio 画板',
   'tab.guideTitle': 'Drawio 画板',
   'tab.guideDesc': '在右侧栏查看、编辑与实时渲染工作区的 drawio 图表；AI 改图时自动跟随。',
@@ -61,6 +62,7 @@ export const ZH = {
 } as const
 
 export const EN: Record<keyof typeof ZH, string> = {
+  'entry.label': 'Drawio Board',
   'tab.title': 'Drawio Board',
   'tab.guideTitle': 'Drawio Board',
   'tab.guideDesc': 'View, edit and live-render the workspace drawio diagrams in the right Sidebar; follows the agent as it draws.',
