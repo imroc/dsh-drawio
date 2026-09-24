@@ -41,9 +41,10 @@ The board is **not** a panel of its own: it is a tab of DSH's own right Sidebar,
 - **It no longer fights for the screen.** The board used to be a self-built side column: two panels competing for one fixed width budget, where the board could only grow by squeezing the Sidebar to nothing and then overflowing the frame — measured at 1440px it never got past about half the screen, and the conversation was squeezed down to almost nothing. Inside the Sidebar, the conversation stays visible.
 - **It gets genuinely wide.** The Sidebar's own drag handle sets its width (up to 70% of the window), and its **fullscreen** control turns the board into the whole window.
 - **It coexists with the other panels.** The tab strip carries a Drawio chip; switch between the board, Files, the embedded browser, or open another board tab from the **+** list.
-- **Two ways in:**
-  - the **board button in the conversation header** (next to the Sidebar's own expand control) — one click opens the Sidebar with the board in it;
-  - the **Drawio board** entry in the right Sidebar's **+** (new tab) list.
+- **Three ways in:**
+  - the **board button in the conversation header** (next to the Sidebar's own expand control) — one click opens the Sidebar with the board in it (wide viewports);
+  - the **Drawio board** entry in the right Sidebar's **+** (new tab) list;
+  - **on a phone**, the **Drawio board** row in the navigation Sidebar (the drawer) — it opens the board and dismisses the drawer. A phone has no room side by side, so the Sidebar switches to its **full-screen panel** (the product's own design), the board fills the screen, and the board toolbar's "Close board" is the way out.
 - **How it follows the agent.** A *live* agent edit reveals the board by itself on a wide screen, so you can watch it draw; **replayed** history only updates the content and never pops the panel open (otherwise every reload would reopen a board you had just closed), and a narrow screen never auto-opens it (that would interrupt your typing). Either way the board quietly follows the newest file the agent touched — open it and it is already there.
 - Lists every `.drawio` file in the workspace (recursive, depth- and count-bounded); picking one renders it.
 - **The official drawio editor, embedded**: pick a file → "Open in editor" → the bundled diagrams.net webapp (local `assets/`, **works offline**) → drag nodes, draw edges, restyle; File → Save posts back through a bridge and writes the workspace file (the board's XML and preview sync immediately).
@@ -125,7 +126,10 @@ Layout:
 | `src/client/index.ts` | Browser half entry: board tab registration and assembly, activity subscription |
 | `src/client/sidebar-tab.tsx` | Registers the board as a tab of the official right Sidebar (the type plus its body and chip seats) |
 | `src/client/sidebar-controller.ts` | Opens, collapses and closes that tab; depends only on the Sidebar service's *structural* face, never imports the Sidebar package |
-| `src/client/header-entry.ts` | The board button in the conversation header corner (DOM injection, positioned beside the Sidebar's own expand control) |
+| `src/client/header-entry.ts` | The board button in the conversation header corner (DOM injection, beside the Sidebar's own expand control; wide viewports only) |
+| `src/client/narrow-entry.ts` | The board row in a phone's navigation Sidebar (the drawer), shown only on narrow viewports, dismissing the drawer on tap |
+| `src/client/narrow-styles.ts` | One `max-width:767px` positioning repair: the mobile shell collapses the Sidebar's full-screen panel containing block to zero height |
+| `src/client/narrow.ts` | The narrow-viewport flag (`matchMedia`, aligned with the Sidebar's own 768px breakpoint) |
 | `src/client/board.tsx` | The board itself: file list, preview, source editor, zoom, embedded editor |
 | `src/client/workspace-root.ts` | Which workspace the board browses (session cwd resolution and fallback) |
 | `src/client/auto-open.ts` | When an activity event may reveal the board by itself (never on replay, never on a narrow screen) |
@@ -134,7 +138,7 @@ Layout:
 
 - **`shape=image`** and complex tables / specialised UML shapes render as placeholders (dashed box with the label) — open the file in the embedded official editor to see them fully;
 - **Edges without explicit waypoints** get basic orthogonal routing (direct plus a midpoint bend) rather than drawio's full router; the agent following the skill can write `points` for an exact match;
-- **The board tab's visibility follows the Sidebar's layout.** DSH's layout solver folds the right panel away on narrow viewports (below 1024px, and whenever fewer than 300px would remain for it the right panel's width resolves to 0). So the practical phone workflow is: open the board tab once on a desktop-width screen — the Sidebar's tab layout is persisted per session — and read it on the phone afterwards.
+- **The board tab's visibility follows the Sidebar's layout.** On a wide viewport it is simply a tab of the Sidebar; when the viewport is too narrow for side-by-side (< 768px) the Sidebar switches to its **full-screen panel**, the board fills the screen, and the board toolbar's "Close board" exits (the surface is still the Sidebar's own board tab; the plugin only adds one narrow-screen positioning fix and one drawer entry). **Note:** the plugin injects one `max-width: 767px` stylesheet targeting the Sidebar's own stable attributes (`[data-rightbar-col]`, `[data-sidebar-right-panel]`) to repair the full-screen panel's collapsed containing block under the mobile shell. A desktop layout is untouched.
 
 ## License
 
