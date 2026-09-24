@@ -83,7 +83,7 @@
   },
   "scripts": {
     "build": "node scripts/prepare.mjs",
-    "test": "node test/smoke.mjs && node test/edge.mjs && node test/edit.mjs && node test/workspace-root.mjs",
+    "test": "node test/smoke.mjs && node test/edge.mjs && node test/edit.mjs && node test/workspace-root.mjs && node test/host-roots.mjs",
     "typecheck": "tsc --noEmit",
     "watch": "tsdown --watch",
     "prepublishOnly": "npm run build"
