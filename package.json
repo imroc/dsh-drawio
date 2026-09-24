@@ -1,7 +1,7 @@
 {
   "name": "dsh-drawio",
   "version": "0.1.1",
-  "description": "DSH drawio 插件：agent 画图工具（drawio_validate / drawio_render / drawio_template）+ 侧边栏「画板」——mxfile XML 实时渲染为 SVG、导出 PNG、写入工作区。核心翻译器为纯 TS 零依赖，宿主与浏览器共用。",
+  "description": "DSH drawio 插件：agent 画图工具（drawio_template / drawio_edit / drawio_validate / drawio_render）+ 官方右侧栏的「Drawio 画板」标签页——mxfile XML 实时渲染为 SVG、导出 PNG、写入工作区。核心翻译器为纯 TS 零依赖，宿主与浏览器共用。",
   "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -23,6 +23,7 @@
     "assets/drawio-webapp",
     "cordis.patch.yml",
     "README.md",
+    "README.en.md",
     "LICENSE"
   ],
   "dsh": {

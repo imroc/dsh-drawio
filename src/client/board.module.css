@@ -277,32 +277,6 @@
   margin-left: auto;
 }
 
-/* Sidebar entry row (injected DOM button). */
-.entry {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  border: none;
-  background: transparent;
-  color: inherit;
-  padding: 7px 12px;
-  font-size: 13px;
-  cursor: pointer;
-  text-align: left;
-  border-radius: 4px;
-}
-.entry:hover {
-  background: var(--dsh-color-fill, #f2f3f5);
-}
-.entry[data-active='true'] {
-  background: color-mix(in srgb, var(--dsh-color-primary, #4080ff) 14%, transparent);
-}
-.entryIcon {
-  display: inline-flex;
-  color: var(--dsh-color-primary, #4080ff);
-}
-
 /* --- official drawio editor mode -------------------------------------------- */
 .editorFrame {
   flex: 1;

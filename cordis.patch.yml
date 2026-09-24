@@ -1,16 +1,19 @@
 # dsh-drawio bundle patch: mounts the dual-face drawio plugin row into the web
-# profile roster. The node half (exports ".") runs in the host process (agent
-# drawio tools + the `drawio` Typert remote serving workspace file ops), and
-# the `dsh.client` declaration in package.json makes the browser half (exports
-# "./client", served at /plugins/dsh-drawio/client.js) load in the web GUI.
+# profile roster. The node half (exports ".") runs in the host process (the agent
+# drawio tools, the /dsh-drawio HTTP routes, and the diagram watcher), and the
+# `dsh.client` declaration in package.json makes the browser half (exports
+# "./client", served at /plugins/dsh-drawio/client.js) load in the web GUI — that
+# half registers the 画板 as a tab of the official right Sidebar.
 #
-# Activate with: dsh plugin --profile web add link:/home/jean/program/dsh-drawio
+# Activate with: dsh plugin --profile web add https://github.com/imroc/dsh-drawio
+# (or a local link: dependency, which is how it is developed — `lib/` is
+# gitignored and there is no prepare script, so a git install carries no build).
 - insert:
     - id: dsh-drawio
       name: dsh-drawio
       config:
         # Agent-visible drawio tools. '*' = expose all built-ins; [] = none.
-        # Built-ins: drawio_validate, drawio_render, drawio_template.
+        # Built-ins: drawio_template, drawio_edit, drawio_validate, drawio_render.
         agentTools: ['drawio_validate', 'drawio_render', 'drawio_template']
         # PNG preview scale factor for drawio_render (default 2).
         pngScale: 2

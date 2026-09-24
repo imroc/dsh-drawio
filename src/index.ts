@@ -2,11 +2,13 @@
  * dsh-drawio — a diagrams.net (drawio) plugin for the DeepSeek Harness web
  * GUI.
  *
- * Host half: the agent drawio tools (drawio_validate / drawio_render /
- * drawio_template), the /dsh-drawio HTTP routes (workspace-gated
- * list/read/save for the 画板 — plain fetch, the family pattern), and PNG
+ * Host half: the agent drawio tools (drawio_template / drawio_edit /
+ * drawio_validate / drawio_render), the /dsh-drawio HTTP routes
+ * (workspace-gated list/read/save for the 画板 — plain fetch, the family
+ * pattern), the diagram watcher behind the activity stream, and PNG
  * rasterization for inline chat previews. The browser half (exports
- * "./client") mounts the sidebar entry and the 画板 view.
+ * "./client") registers the 画板 as a tab of the official right Sidebar and
+ * injects the header control that opens it.
  *
  * Function plugin — no default export (the Loader unwraps
  * `exports.default ?? exports`).

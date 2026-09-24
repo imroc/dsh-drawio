@@ -5,9 +5,14 @@
  */
 
 export const ZH = {
-  'entry.label': 'Drawio 画板',
+  'tab.title': 'Drawio 画板',
+  'tab.guideTitle': 'Drawio 画板',
+  'tab.guideDesc': '在右侧栏查看、编辑与实时渲染工作区的 drawio 图表；AI 改图时自动跟随。',
+  'header.open': '打开画板',
+  'header.collapse': '收起右侧栏',
+  'header.aria': '在右侧栏打开 Drawio 画板',
   'close.label': '关闭画板',
-  'close.tip': '收起画板，回到对话',
+  'close.tip': '关闭画板标签页，回到对话',
   'panel.title': 'Drawio 画板',
   'panel.subtitle': '工作区图表 · 实时渲染',
   'panel.noRoot': '未打开项目工作区，请先打开一个会话项目。',
@@ -56,9 +61,14 @@ export const ZH = {
 } as const
 
 export const EN: Record<keyof typeof ZH, string> = {
-  'entry.label': 'Drawio Board',
+  'tab.title': 'Drawio Board',
+  'tab.guideTitle': 'Drawio Board',
+  'tab.guideDesc': 'View, edit and live-render the workspace drawio diagrams in the right Sidebar; follows the agent as it draws.',
+  'header.open': 'Open the board',
+  'header.collapse': 'Collapse the Sidebar',
+  'header.aria': 'Open the Drawio board in the right Sidebar',
   'close.label': 'Close board',
-  'close.tip': 'Collapse the board and go back to the conversation',
+  'close.tip': 'Close the board tab and go back to the conversation',
   'panel.title': 'Drawio Board',
   'panel.subtitle': 'Workspace diagrams · live render',
   'panel.noRoot': 'No project workspace open — open a session project first.',
