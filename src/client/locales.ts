@@ -7,6 +7,7 @@
 export const ZH = {
   'entry.label': 'Drawio 画板',
   'close.label': '关闭画板',
+  'close.tip': '收起画板，回到对话',
   'panel.title': 'Drawio 画板',
   'panel.subtitle': '工作区图表 · 实时渲染',
   'panel.noRoot': '未打开项目工作区，请先打开一个会话项目。',
@@ -57,6 +58,7 @@ export const ZH = {
 export const EN: Record<keyof typeof ZH, string> = {
   'entry.label': 'Drawio Board',
   'close.label': 'Close board',
+  'close.tip': 'Collapse the board and go back to the conversation',
   'panel.title': 'Drawio Board',
   'panel.subtitle': 'Workspace diagrams · live render',
   'panel.noRoot': 'No project workspace open — open a session project first.',

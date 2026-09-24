@@ -17,6 +17,8 @@ import { DrawioController } from './controller.ts'
 import { DrawioCol } from './drawio-col.ts'
 import { subscribeDrawioEvents } from './events.ts'
 import { queueOpenPath } from './open-queue.ts'
+import { noteActivityRoot } from './workspace-root.ts'
+import { shouldAutoOpen } from './auto-open.ts'
 import { mountSidebarEntry } from './sidebar-entry.ts'
 import { mountDrawioView } from './view-mount.tsx'
 import { DrawioApi, type DrawioRemote } from './api.ts'
@@ -45,6 +47,16 @@ function makeApi(root: string): DrawioRemote {
 }
 
 /**
+ * Current viewport width, read at decision time (not cached): the shells can
+ * be resized or emulated after load, and the narrow-screen rule has to see
+ * the width the user is actually on.
+ */
+function viewportWidth(): number {
+  if (typeof window === 'undefined') return Number.POSITIVE_INFINITY
+  return window.innerWidth
+}
+
+/**
  * Browser plugin body: dictionaries, the sidebar entry, and the center-column
  * 画板 view.
  *
@@ -54,9 +66,11 @@ export async function apply(ctx: ClientContext): Promise<void> {
   ctx.effect(() => ctx.locale.register(NS, { zh: ZH, en: EN }), 'dsh-drawio: dictionaries')
 
   const controller = new DrawioController()
-  // The close button lives in the column itself, so it must go through the
-  // controller — otherwise the sidebar row's highlight stays lit.
-  const col = new DrawioCol(() => { controller.setOpen(false) })
+  // Closing goes through the controller — it owns the open state, and the
+  // column plus the sidebar row's highlight both mirror it. Flipping the
+  // column directly would leave that row highlighted with the board closed.
+  const closeBoard = (): void => { controller.setOpen(false) }
+  const col = new DrawioCol()
   col.mount()
   // The controller owns the open state (sidebar highlight); the column
   // mirrors it (widens / collapses beside the conversation).
@@ -68,14 +82,18 @@ export async function apply(ctx: ClientContext): Promise<void> {
   const onOpenCol = (): void => { controller.setOpen(true) }
   window.addEventListener('dsh-drawio:open-col', onOpenCol)
   const disposers: Array<() => void> = []
-  // Agent drawio activity -> auto-open the board and point it at the file
-  // the agent is drawing. The path goes through the open queue (not a window
-  // event): the SSE replay can arrive before the board tree has mounted its
-  // listeners, and the board drains the queue once a root is available.
-  disposers.push(subscribeDrawioEvents((activity) => {
-    controller.setOpen(true)
+  // Agent drawio activity -> point the board at the file the agent is drawing,
+  // and (live events only, screen permitting) reveal the board. The path goes
+  // through the open queue rather than a window event: the SSE replay can
+  // arrive before the board tree has mounted its listeners, and the board
+  // drains the queue once a root is available.
+  disposers.push(subscribeDrawioEvents(({ activity, replay }) => {
+    noteActivityRoot(activity.root)
     if (typeof activity.path === 'string' && activity.path !== '') {
-      queueOpenPath(activity.path)
+      queueOpenPath(activity.path, activity.root)
+    }
+    if (shouldAutoOpen({ replay, viewportWidth: viewportWidth() })) {
+      controller.setOpen(true)
     }
   }))
   try {
@@ -88,6 +106,7 @@ export async function apply(ctx: ClientContext): Promise<void> {
       makeApi,
       ctx.sessions.list as unknown as SessionListStore,
       fontFamily ?? "Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif",
+      closeBoard,
     ))
   } catch (error) {
     // DOM failures degrade the 画板, never the GUI.

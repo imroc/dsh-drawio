@@ -101,13 +101,13 @@ export class DiagramWatchService {
 
     for (const [path, mtime] of current) {
       if (previous.get(path) !== mtime) {
-        broadcastDrawioActivity({ kind: 'edit', path })
+        broadcastDrawioActivity({ kind: 'edit', path, root })
       }
     }
     // Deleted files (present before, gone now) also count as activity.
     for (const path of previous.keys()) {
       if (!current.has(path)) {
-        broadcastDrawioActivity({ kind: 'edit', path })
+        broadcastDrawioActivity({ kind: 'edit', path, root })
       }
     }
   }

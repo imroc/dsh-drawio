@@ -72,6 +72,26 @@ export default defineConfig([
     },
   },
   {
+    // The pure client decisions, built as plain ESM so the node test suite can
+    // exercise them. They are the parts of the browser half that encode rules
+    // (which workspace the board browses, when it may reveal itself) — the
+    // rules that produced a silently blank panel when they went wrong, so they
+    // get unit tests instead of only browser coverage. Runs last because the
+    // first face owns the `clean`.
+    name: `${PLUGIN_ID}/pure`,
+    entry: {
+      'workspace-root': 'src/client/workspace-root.ts',
+      'auto-open': 'src/client/auto-open.ts',
+    },
+    outDir: 'lib',
+    format: ['esm'],
+    platform: 'node',
+    target: 'es2023',
+    dts: false,
+    clean: false,
+    fixedExtension: false,
+  },
+  {
     name: `${PLUGIN_ID}/client`,
     entry: { client: 'src/client/index.ts' },
     outDir: 'lib',

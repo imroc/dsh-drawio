@@ -34,7 +34,7 @@ export const inject = ['tools', 'workspaceRegistry', 'webServer', 'loader', 'att
 
 export { resolveConfig } from './config.ts'
 export type { Config } from './config.ts'
-export { DrawioService, verifyWorkspaceRoot, isPathInside, normalizeForPrefix, DIAGRAM_EXTENSIONS } from './service.ts'
+export { DrawioService, verifyWorkspaceRoot, workspaceRootOf, listWorkspaceRoots, isPathInside, normalizeForPrefix, DIAGRAM_EXTENSIONS } from './service.ts'
 export { registerDrawioRoutes } from './routes.ts'
 export { serveStaticDir } from './static.ts'
 export { buildAgentTools, buildTemplate, renderResultText } from './tools.ts'

@@ -36,6 +36,30 @@ function newSessionButton(root: HTMLElement): HTMLButtonElement | undefined {
   return undefined
 }
 
+/**
+ * Dismiss the mobile drawer after a navigation tap.
+ *
+ * The mobile shells (dsh-bridge) slide the sidebar off-canvas and close it
+ * again when a tap lands on a session row, the backdrop, or New Session — but
+ * not for a row a plugin injected, so tapping 画板 collapsed the drawer's
+ * overlay while the drawer itself stayed put: the board opened underneath it
+ * and the tap looked like it did nothing.
+ *
+ * The shells publish the state as the `dsh-drawer-open` body class (it is
+ * what shows their backdrop), so dropping it is exactly what their own
+ * backdrop handler does. Best-effort by design: a shell that does not use
+ * that class just leaves the drawer as it was, and the row still works.
+ */
+function dismissMobileDrawer(): void {
+  try {
+    if (window.innerWidth > 767) return
+    if (!document.body.classList.contains('dsh-drawer-open')) return
+    document.body.classList.remove('dsh-drawer-open')
+  } catch {
+    // A shell detail must never break the entry row.
+  }
+}
+
 /** Build the entry row (a detached button; inserted once the shell is up). */
 function createEntry(controller: DrawioController): HTMLButtonElement {
   const label = t('entry.label')
@@ -45,7 +69,10 @@ function createEntry(controller: DrawioController): HTMLButtonElement {
   entry.className = styles.entry!
   entry.setAttribute('aria-label', label)
   entry.innerHTML = `<span class="${styles.entryIcon}">${ICON_SVG}</span><span>${label}</span>`
-  entry.addEventListener('click', () => { controller.toggle() })
+  entry.addEventListener('click', () => {
+    controller.toggle()
+    dismissMobileDrawer()
+  })
   return entry
 }
 

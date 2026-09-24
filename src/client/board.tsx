@@ -6,19 +6,24 @@
  * @module dsh-drawio/client/board
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { JSX } from 'react'
 import type { DrawioRemote } from './api.ts'
 import type { ListEntry } from '../protocol.ts'
 import { diagramToSvg, parseDiagrams } from '../translate.ts'
 import { t } from './i18n.ts'
-import { drainOpenPaths, subscribeOpenPath } from './open-queue.ts'
+import { drainOpenPaths, subscribeOpenPath, type OpenTarget } from './open-queue.ts'
+import { WorkspaceRootStore } from './workspace-root.ts'
 import styles from './board.module.css'
 
-/** Session store shape the board reads the workspace root from. */
+/**
+ * Session store shape the board reads from. Only the per-Session `cwd` is
+ * read here — which Session is on screen comes from the persisted selection
+ * (see `workspace-root.ts`), because the list snapshot no longer carries it.
+ */
 export interface SessionListStore {
   subscribe: (listener: () => void) => () => void
-  getSnapshot: () => { current?: string; byId: Record<string, { cwd?: string }> }
+  getSnapshot: () => { byId: Record<string, { cwd?: string }> }
 }
 
 const ICON_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v13H4z"/><path d="M4 9h16"/><circle cx="7.5" cy="12.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12.5" r="1.2" fill="currentColor" stroke="none"/><path d="M9 17l3-3 2 2 2-3"/></svg>`
@@ -31,13 +36,29 @@ export function BoardView({
   makeApi,
   sessions,
   fontFamily,
+  onClose,
 }: {
   /** Binds one workspace root to a fresh API client (rebuilt on session switch). */
   makeApi: (root: string) => DrawioRemote
   sessions: SessionListStore
   fontFamily: string
+  /**
+   * Collapse the board. Optional: the board is still usable without a way to
+   * close it, but on a phone the close control below is the ONLY exit (the
+   * sidebar row that toggles the board lives in the drawer there).
+   */
+  onClose?: () => void
 }): JSX.Element {
-  const root = useSyncExternalStoreSafe(sessions)
+  const rootStore = useMemo(() => new WorkspaceRootStore({ sessions }), [sessions])
+  useEffect(() => {
+    rootStore.start()
+    return () => { rootStore.dispose() }
+  }, [rootStore])
+  const root = useSyncExternalStore(
+    useCallback((listener: () => void) => rootStore.subscribe(listener), [rootStore]),
+    useCallback(() => rootStore.getSnapshot(), [rootStore]),
+    useCallback(() => rootStore.getSnapshot(), [rootStore]),
+  )
   const api = useMemo(() => (root === '' ? null : makeApi(root)), [root, makeApi])
   const [entries, setEntries] = useState<ListEntry[] | null>(null)
   const [listError, setListError] = useState<string | null>(null)
@@ -150,7 +171,7 @@ export function BoardView({
   }, [refresh, showFiles])
 
   // ---- open one file -------------------------------------------------------
-  const openFile = useCallback(async (path: string): Promise<void> => {
+  const openFile = useCallback(async (path: string, quiet = false): Promise<void> => {
     if (root === '' || api === null) return
     try {
       const result = await api.read({ root, path })
@@ -160,9 +181,35 @@ export function BoardView({
       setFileMtime(result.mtime)
       setSaveState({ kind: 'idle' })
     } catch (error) {
+      if (quiet) {
+        // The path does not exist in this workspace: drop it instead of
+        // leaving a stale selection and an error banner on screen.
+        setSelected(null)
+        setDraftName('')
+        setXml('')
+        setFileMtime(null)
+        setRenderResult(null)
+        setRenderError(null)
+        return
+      }
       setRenderError(error instanceof Error ? error.message : String(error))
     }
   }, [root, api])
+
+  // A Session switch changes the workspace root under the board (the root now
+  // follows the selection, so it can move at runtime). Re-resolve the open file
+  // against the new root: two Sessions of the same project keep their diagram,
+  // a switch to another project drops the path that is not there.
+  const previousRoot = useRef(root)
+  useEffect(() => {
+    const from = previousRoot.current
+    previousRoot.current = root
+    if (from === root) return
+    if (selected === null || root === '') { setSelected(null); setXml(''); setRenderResult(null); setRenderError(null); setFileMtime(null); setDraftName(''); return }
+    void openFile(selected, true)
+    // `selected` is read at the moment the root moves; re-running on selection
+    // changes is a no-op because the guard above already returned.
+  }, [root, selected, openFile])
 
   // ---- live render (debounced) ----------------------------------------------
   useEffect(() => {
@@ -488,12 +535,17 @@ export function BoardView({
   // The host broadcasts agent drawio activity through the open queue: live
   // events arrive here as they happen; the SSE replay may arrive BEFORE this
   // tree mounts and/or before a workspace root is selected, so the queue is
-  // drained whenever a root becomes available (mount included).
+  // drained whenever a root becomes available (mount included). The host
+  // watches every registered workspace, so an entry naming a DIFFERENT
+  // workspace is skipped — it is not a file this board can show. Opening is
+  // quiet either way: a path that is not there just leaves the board as it
+  // was, instead of raising an error the user cannot act on.
   useEffect(() => {
     if (root === '' || api === null) return
-    const openIfNew = (path: string): void => {
+    const openIfNew = (target: OpenTarget): void => {
+      if (target.root !== undefined && target.root !== root) return
       setSelected((prev) => {
-        if (prev !== path) void openFile(path)
+        if (prev !== target.path) void openFile(target.path, true)
         return prev
       })
     }
@@ -645,6 +697,17 @@ export function BoardView({
         >
           {editorOpen ? t('action.editorClose') : t('action.editor')}
         </button>
+        {onClose !== undefined && (
+          <button
+            type="button"
+            className={styles.btn}
+            data-dsh-drawio-close=""
+            title={t('close.tip')}
+            onClick={onClose}
+          >
+            {t('close.label')}
+          </button>
+        )}
       </div>
 
       <div className={styles.main}>
@@ -731,29 +794,6 @@ export function BoardView({
       </div>
     </div>
   )
-}
-
-/** Subscribe the workspace root to the session store ('' when none). */
-function useSyncExternalStoreSafe(sessions: SessionListStore): string {
-  const [root, setRoot] = useState<string>(() => currentRoot(sessions))
-  useEffect(() => {
-    const unsubscribe = sessions.subscribe(() => {
-      setRoot(currentRoot(sessions))
-    })
-    return unsubscribe
-  }, [sessions])
-  return root
-}
-
-function currentRoot(sessions: SessionListStore): string {
-  try {
-    const snapshot = sessions.getSnapshot()
-    const id = snapshot.current
-    const cwd = id === undefined ? undefined : snapshot.byId[id]?.cwd
-    return typeof cwd === 'string' && cwd !== '' ? cwd : ''
-  } catch {
-    return ''
-  }
 }
 
 /**

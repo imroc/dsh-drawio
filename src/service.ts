@@ -72,6 +72,34 @@ export async function verifyWorkspaceRoot(ctx: Context, root: string): Promise<G
   return { ok: false, error: 'path is not inside a registered workspace' }
 }
 
+/**
+ * The registered workspace root a path belongs to (deepest match wins, so
+ * nested workspaces attribute to the innermost one).
+ * @param ctx - context carrying the workspace registry.
+ * @param target - an absolute path on disk.
+ * @returns the workspace root, or undefined when the path belongs to none.
+ */
+export function workspaceRootOf(ctx: Context, target: string): string | undefined {
+  if (typeof target !== 'string' || target === '') return undefined
+  let best: string | undefined
+  for (const workspace of ctx.workspaceRegistry.list()) {
+    if (!isPathInside(workspace.path, target)) continue
+    if (best === undefined || workspace.path.length > best.length) best = workspace.path
+  }
+  return best
+}
+
+/**
+ * Every registered workspace root, in registry order. The board's fallback
+ * when it cannot name the current Session: a host that has exactly one
+ * workspace has no ambiguity to resolve.
+ * @param ctx - context carrying the workspace registry.
+ * @returns the registered roots.
+ */
+export function listWorkspaceRoots(ctx: Context): string[] {
+  return ctx.workspaceRegistry.list().map(workspace => workspace.path)
+}
+
 /** A workspace-relative path, validated for traversal safety. */
 function safeRelative(root: string, path: string): string | null {
   const clean = path.replaceAll('\\', '/').replace(/^\/+/, '')

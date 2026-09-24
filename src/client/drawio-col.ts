@@ -6,19 +6,38 @@
  * element's width — so no shared style is ever rewritten and there is no
  * conflict with sibling panel plugins. Width is draggable and persisted.
  *
+ * On a narrow screen the side-by-side assumption does not hold: the mobile
+ * shells turn the frame into a single-column flex stack, so the column lands
+ * UNDER the conversation and — still carrying its desktop width — squeezes
+ * the chat into half the viewport while covering the other half itself. The
+ * fixed overlay stylesheet below takes it out of that flow entirely: below
+ * the breakpoint the board fills the viewport beneath the shell's fixed
+ * mobile header, and the conversation keeps the full screen behind it.
+ *
  * @module dsh-drawio/client/drawio-col
  */
 
-import { t } from './i18n.ts'
+import { NARROW_VIEWPORT_PX } from './auto-open.ts'
 
 /** Stable attribute identifying the injected column. */
 export const COL_SELECTOR = '[data-dsh-drawio-col]'
 
-/** Stable attribute identifying the injected close button. */
+/**
+ * Stable attribute identifying the board's close control. It lives in the
+ * board's toolbar (board.tsx), not in this column: the sidebar row that
+ * toggles the board is unreachable on a phone (it sits in the drawer), and a
+ * control floating over the toolbar covers the toolbar's own buttons.
+ */
 export const CLOSE_SELECTOR = '[data-dsh-drawio-close]'
+
+/** Stable attribute identifying the injected drag handle. */
+export const HANDLE_SELECTOR = '[data-dsh-drawio-col-handle]'
 
 /** Width persistence key. */
 export const COL_WIDTH_KEY = 'dsh-drawio-col-width-px'
+
+/** Marks the injected narrow-screen stylesheet (idempotent injection). */
+export const NARROW_STYLE_ID = 'dsh-drawio-narrow-styles'
 
 const DEFAULT_WIDTH = 520
 const MIN_WIDTH = 300
@@ -43,6 +62,48 @@ function persistedWidth(): number {
 }
 
 /**
+ * Inject the narrow-screen rule once. Below the breakpoint the column leaves
+ * the frame's flow and becomes a viewport-filling overlay beneath the shells'
+ * fixed mobile header.
+ *
+ * Three details matter:
+ *
+ * - the controller writes `width` and `display` inline, so the overlay rules
+ *   need `!important` on exactly those, and only inside the media query, so
+ *   the desktop geometry stays purely inline and untouched;
+ * - `--dsh-mobile-header-h` is the band the mobile shells reserve for their
+ *   own fixed header (dsh-bridge publishes it). The 52px fallback matches the
+ *   conversation header a narrow desktop window still shows, so the overlay
+ *   never hides behind either;
+ * - the drag handle is hidden: the overlay's width is the viewport, so
+ *   resizing it means nothing here.
+ */
+function ensureNarrowStyles(): void {
+  if (document.getElementById(NARROW_STYLE_ID) !== null) return
+  const style = document.createElement('style')
+  style.id = NARROW_STYLE_ID
+  style.textContent = [
+    `@media (max-width: ${NARROW_VIEWPORT_PX}px) {`,
+    `  ${COL_SELECTOR} {`,
+    '    position: fixed !important;',
+    '    left: 0 !important;',
+    '    right: 0 !important;',
+    '    top: var(--dsh-mobile-header-h, 52px) !important;',
+    '    bottom: 0 !important;',
+    '    width: auto !important;',
+    '    height: auto !important;',
+    '    min-width: 0 !important;',
+    '    overflow: hidden !important;',
+    '    background: var(--dsw-alias-bg-layer-1, #ffffff) !important;',
+    '    z-index: 95 !important;',
+    '  }',
+    `  ${HANDLE_SELECTOR} { display: none !important; }`,
+    '}',
+  ].join('\n')
+  document.head.appendChild(style)
+}
+
+/**
  * The drawio column controller: owns the column element, its width, the drag
  * handle, and the open/closed state (collapsed = width 0, kept mounted).
  */
@@ -50,17 +111,9 @@ export class DrawioCol {
   private frame: HTMLElement | null = null
   private col: HTMLDivElement | null = null
   private handle: HTMLDivElement | null = null
-  private closeBtn: HTMLButtonElement | null = null
   private waitObserver: MutationObserver | null = null
   private width = persistedWidth()
   private open = false
-
-  /**
-   * @param closeBoard - invoked by the injected close button. The controller
-   * owns the open state, so the button must not flip this column directly:
-   * doing so would leave the sidebar row's highlight stale.
-   */
-  constructor(private readonly closeBoard: () => void = () => { this.setOpen(false) }) {}
 
   /** The column element once attached (null while the shell is not mounted). */
   get element(): HTMLElement | null {
@@ -74,6 +127,7 @@ export class DrawioCol {
 
   /** Attach to the frame once it appears (self-healing on shell rebuilds). */
   mount(): void {
+    ensureNarrowStyles()
     const tryAttach = (): void => {
       if (this.frame !== null && this.frame.isConnected) {
         if (!this.frame.contains(this.col)) this.attach(this.frame)
@@ -170,48 +224,6 @@ export class DrawioCol {
     col.appendChild(handle)
     this.handle = handle
 
-    // Close button pinned to the column's top-right. The sidebar row that
-    // toggles the board is the only other way out, and on a phone that row
-    // sits in the drawer (translated off-screen) — without this button the
-    // board is open with no reachable control to close it.
-    const close = document.createElement('button')
-    close.type = 'button'
-    close.dataset.dshDrawioClose = ''
-    close.setAttribute('aria-label', t('close.label'))
-    close.textContent = '×'
-    close.style.cssText = [
-      'position:fixed',
-      // Below the mobile header band: the bridge renders its own fixed header
-      // (z-index 9998) across the top, so a button inside that band would be
-      // covered and the tap would reach the shell's header controls instead.
-      'top:calc(var(--dsh-mobile-header-h, 0px) + 10px)',
-      'right:12px',
-      'z-index:90',
-      'flex:none',
-      'box-sizing:border-box',
-      'width:32px',
-      'height:32px',
-      'border-radius:50%',
-      'border:1px solid rgba(0,0,0,0.12)',
-      'background:var(--dsw-alias-bg-layer-1,#ffffff)',
-      'color:var(--dsw-alias-label-primary,#111827)',
-      'font-size:20px',
-      'line-height:1',
-      'display:flex',
-      'align-items:center',
-      'justify-content:center',
-      'cursor:pointer',
-      'padding:0',
-      'pointer-events:auto',
-      'box-shadow:0 1px 3px rgba(0,0,0,0.12)',
-    ].join(';')
-    close.addEventListener('click', (event: MouseEvent) => {
-      event.stopPropagation()
-      this.closeBoard()
-    })
-    col.appendChild(close)
-    this.closeBtn = close
-
     // Apply the current open state: the frame may attach AFTER the user
     // already toggled the panel (shell mounts asynchronously).
     this.setOpen(this.open)
@@ -221,9 +233,9 @@ export class DrawioCol {
   dispose(): void {
     this.waitObserver?.disconnect()
     this.col?.remove()
+    document.getElementById(NARROW_STYLE_ID)?.remove()
     this.col = null
     this.handle = null
-    this.closeBtn = null
     this.frame = null
   }
 }

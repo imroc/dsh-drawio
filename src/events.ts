@@ -18,6 +18,13 @@ export interface DrawioActivity {
   kind: 'edit' | 'render' | 'template'
   /** Workspace-relative (or as-passed) path the agent operated on. */
   path?: string
+  /**
+   * Registered workspace root the activity was attributed to, when the host
+   * could tell. The board resolves its root from the Session selection first;
+   * this is the fallback that still lands the board somewhere useful when no
+   * selection is available (and tells the board which workspace drew).
+   */
+  root?: string
   /** Epoch millis when the activity was broadcast (replay dedupe on the client). */
   time?: number
 }

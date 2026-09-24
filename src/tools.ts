@@ -14,7 +14,7 @@
  */
 
 import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname, isAbsolute, resolve } from 'node:path'
+import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import { defineTool } from '@deepseek-ai/dsh-tools'
@@ -24,7 +24,7 @@ import { exposed } from './config.ts'
 import { applyEditOps, type EditOp, type EditPoint, type EditResult } from './edit.ts'
 import { broadcastDrawioActivity } from './events.ts'
 import { savePngAttachment, svgToPng } from './raster.ts'
-import { verifyWorkspaceRoot } from './service.ts'
+import { verifyWorkspaceRoot, workspaceRootOf } from './service.ts'
 import { diagramToSvg, parseDiagrams, type Diagram } from './translate.ts'
 
 /** The tool result contract (validated against the output schema). */
@@ -75,6 +75,36 @@ const RESULT_SCHEMA = {
     },
   },
 } as const
+
+/**
+ * Broadcast one agent drawio activity for a file the tool just touched.
+ *
+ * The path is made workspace-relative: the board's file list, its open queue,
+ * and the root it compares against all speak paths relative to a registered
+ * workspace root, while the agent may well have passed an absolute one. The
+ * root goes along so the board can tell which workspace drew — it watches
+ * every registered workspace and must ignore activity from a project the user
+ * is not looking at.
+ *
+ * @param ctx - context carrying the workspace registry.
+ * @param kind - activity kind the board keys on.
+ * @param absPath - absolute path of the file, when the tool has one.
+ * @param fallbackPath - the agent's own path, used when no workspace matches
+ *   (absent when the tool worked on inline XML rather than a file).
+ */
+function announceActivity(
+  ctx: Context,
+  kind: 'edit' | 'render' | 'template',
+  absPath: string | undefined,
+  fallbackPath: string | undefined,
+): void {
+  const root = absPath === undefined ? undefined : workspaceRootOf(ctx, absPath)
+  if (root === undefined || absPath === undefined) {
+    broadcastDrawioActivity(fallbackPath === undefined ? { kind } : { kind, path: fallbackPath })
+    return
+  }
+  broadcastDrawioActivity({ kind, path: relative(root, absPath).replaceAll('\\', '/'), root })
+}
 
 /** Count vertices/edges across the whole cell tree. */
 function countCells(diagram: Diagram): { vertices: number; edges: number } {
@@ -264,7 +294,7 @@ function renderTool(ctx: Context, config: Config): ToolDefinition {
           const pngPath = await writeOutput(ctx, source.absPath, '.png', png)
           if (pngPath !== null) files.push(pngPath)
         }
-        broadcastDrawioActivity({ kind: 'render', path: path })
+        announceActivity(ctx, 'render', source.absPath, path)
         // `preview` declares "default true": only an explicit false opts out
         // (matching drawio_edit's `preview !== false`).
         if (preview === false) return { ...result, files }
@@ -515,7 +545,7 @@ function editTool(ctx: Context, config: Config): ToolDefinition {
         return { ...result, ok: false, error: `write failed: ${error instanceof Error ? error.message : String(error)}` }
       }
       result.files.push(source.absPath)
-      broadcastDrawioActivity({ kind: 'edit', path: path })
+      announceActivity(ctx, 'edit', source.absPath, path)
       // Inline preview.
       if (preview !== false && parsed.ok) {
         try {

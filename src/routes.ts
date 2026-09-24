@@ -12,6 +12,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type { DrawioEnvelope } from './protocol.ts'
 import type { DrawioService, DrawioOpResult } from './service.ts'
+import { listWorkspaceRoots } from './service.ts'
 import { subscribeDrawioEvents } from './events.ts'
 
 /** Loopback trust fence (mirrors dsh-ssh / dsh-aionui-panel). */
@@ -146,6 +147,13 @@ export function registerDrawioRoutes(ctx: Context, service: DrawioService): () =
           unsubscribe()
           clearInterval(heartbeat)
         })
+        return
+      }
+      if (url.pathname === '/dsh-drawio/roots') {
+        // The registered workspace roots. The board resolves its root from the
+        // Session selection first; this is the fallback for when that is not
+        // available (fresh client, or a host build that moved the selection).
+        json(res, { ok: true, value: { roots: listWorkspaceRoots(ctx) } })
         return
       }
       if (url.pathname === '/dsh-drawio/raw') {
