@@ -1,6 +1,6 @@
 {
   "name": "dsh-drawio",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "DSH drawio 插件：agent 画图工具（drawio_template / drawio_edit / drawio_validate / drawio_render）+ 官方右侧栏的「Drawio 画板」标签页——mxfile XML 实时渲染为 SVG、导出 PNG、写入工作区。核心翻译器为纯 TS 零依赖，宿主与浏览器共用。",
   "type": "module",
   "main": "./lib/index.js",
@@ -54,10 +54,10 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/cordis-plugin-loader": "^1.0.2",
-    "@deepseek-ai/dsh-tools": ">=0.1.7-rc.1 <0.2.0-0",
-    "@deepseek-ai/dsh-workspace": ">=0.1.7-rc.1 <0.2.0-0",
-    "@deepseek-ai/dsh-attachment": ">=0.1.7-rc.1 <0.2.0-0",
-    "@deepseek-ai/dsh-session": ">=0.1.7-rc.1 <0.2.0-0"
+    "@deepseek-ai/dsh-tools": ">=0.1.7-rc.1 <0.2.0-0 || >=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-workspace": ">=0.1.7-rc.1 <0.2.0-0 || >=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-attachment": ">=0.1.7-rc.1 <0.2.0-0 || >=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-session": ">=0.1.7-rc.1 <0.2.0-0 || >=0.2.0-rc.1 <0.3.0-0"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2"
@@ -65,14 +65,12 @@
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/cordis-plugin-loader": "^1.0.2",
-    "@deepseek-ai/dsh-attachment": "0.1.0-rc.6",
-    "@deepseek-ai/dsh-client-connection": "0.1.0-rc.6",
-    "@deepseek-ai/dsh-client-locale": "0.1.0-rc.6",
-    "@deepseek-ai/dsh-client-runtime": "0.1.0-rc.6",
-    "@deepseek-ai/dsh-client-ui-slots": "0.1.0-rc.6",
-    "@deepseek-ai/dsh-session": "0.1.0-rc.6",
-    "@deepseek-ai/dsh-tools": "0.1.0-rc.6",
-    "@deepseek-ai/dsh-workspace": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-attachment": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-locale": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-session": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-workspace": "0.2.0-rc.2",
     "@types/node": "^26.2.0",
     "@types/react": "18.3.31",
     "@types/react-dom": "^18.3.5",
@@ -80,7 +78,9 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "tsdown": "^0.22.14",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2"
   },
   "scripts": {
     "build": "node scripts/prepare.mjs",
