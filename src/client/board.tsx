@@ -13,6 +13,7 @@ import type { ListEntry } from '../protocol.ts'
 import { diagramToSvg, parseDiagrams } from '../translate.ts'
 import { t } from './i18n.ts'
 import { drainOpenPaths, subscribeOpenPath, type OpenTarget } from './open-queue.ts'
+import { autoOpenEnabled, storeAutoOpen } from './prefs.ts'
 import { WorkspaceRootStore } from './workspace-root.ts'
 import styles from './board.module.css'
 
@@ -155,6 +156,18 @@ export function BoardView({
   userEditingRef.current = userEditing
   const followRef = useRef(true)
   followRef.current = followEnabled
+
+  // ---- reveal policy: may agent drawing pop this panel open? ----------------
+  // Seeded from the per-browser override (falling back to the host default
+  // fetched by the plugin body) and written straight back to localStorage, so
+  // the SSE consumer — which re-reads the store per event — honours a click
+  // immediately, with no restart and no cross-tree plumbing.
+  const [autoOpen, setAutoOpen] = useState(() => autoOpenEnabled())
+  const toggleAutoOpen = (): void => {
+    const next = !autoOpen
+    setAutoOpen(next)
+    storeAutoOpen(next)
+  }
 
   // ---- file list ---------------------------------------------------------
   const refresh = useCallback(async (): Promise<void> => {
@@ -683,6 +696,14 @@ export function BoardView({
           onClick={() => setFollowEnabled((v) => !v)}
         >
           {followEnabled ? t('follow.on') : t('follow.off')}
+        </button>
+        <button
+          type="button"
+          className={autoOpen ? styles.btnActive : styles.btn}
+          title={t('reveal.tip')}
+          onClick={toggleAutoOpen}
+        >
+          {autoOpen ? t('reveal.on') : t('reveal.off')}
         </button>
         <button
           type="button"

@@ -58,7 +58,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
 
   // The board's workspace file service + its HTTP routes.
   const service = new DrawioService(ctx)
-  const disposeRoutes = registerDrawioRoutes(ctx, service)
+  const disposeRoutes = registerDrawioRoutes(ctx, service, () => resolved)
   ctx.effect(() => () => disposeRoutes(), 'dsh-drawio: /dsh-drawio routes')
 
   // The bundled drawio webapp (official editor) at /drawio/*.
@@ -67,9 +67,10 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   ctx.effect(() => () => disposeStatic(), 'dsh-drawio: /drawio static')
 
   // Watch every registered workspace for .drawio changes, so the board
-  // auto-opens whenever the agent writes a diagram file — regardless of the
-  // tool used (drawio_* tools broadcast directly; this catches plain file
-  // writes and deletions too).
+  // follows whatever diagram the agent wrote — regardless of the tool used
+  // (drawio_* tools broadcast directly; this catches plain file writes and
+  // deletions too). Whether that activity may also REVEAL the board is the
+  // browser half's call, gated by `boardAutoOpen`.
   const watcher = new DiagramWatchService(ctx)
   watcher.start()
   ctx.effect(() => () => watcher.stop(), 'dsh-drawio: diagram watcher')

@@ -44,7 +44,7 @@
   - 会话标题栏右上角的 **画板按钮**（挨着官方的侧栏展开按钮）——点一下就把侧栏连同画板一起打开（宽视口）；
   - 右侧栏的 `+`（新建标签页）列表里的 **Drawio 画板** 入口；
   - **手机端**：导航侧栏（抽屉）里的 **Drawio 画板** 行——点它展开画板并自动收起抽屉。手机上没有并排的空间，此时侧栏会切成**全屏面板**（官方设计），画板铺满屏幕，用面板工具栏的「关闭画板」退出；
-- **AI 跟随节奏**：agent 改图时的**实时**活动会在宽屏自动把画板亮出来（你不动手就能看着它画）；**重放的历史活动只更新内容、不弹面板**（否则每次刷新都会把刚关掉的画板弹回来）；**窄屏不自动打开**，免得打断你输入。无论面板开没开，画板都在静默跟随 agent 最新改的那个文件，打开即最新；
+- **AI 跟随节奏，但不抢屏幕**：agent 改图时画板**静默跟随**最新那个文件，你点开就是最新——**不会自己弹出来**（默认 `boardAutoOpen: false`）。想边画边看就在画板工具栏点「自动弹出:开」，这个选择按浏览器记住（`localStorage`），随时点回去；即便开着，**重放的历史活动也不弹**（否则每次刷新都会把刚关掉的画板弹回来），**窄屏也不弹**（免得打断你输入）；
 - 列出工作区所有 `.drawio` 文件（递归扫描，深度与条数受限），选中即渲染；
 - **官方 drawio 编辑器嵌入**：选中文件 → 「在编辑器中打开」→ 内置 diagrams.net webapp（本地 `assets/`，**离线可用**）→ 拖节点、连线、改样式，File → Save 经 postMessage 桥自动写回工作区（保存后画板的 XML / 预览即时同步）；
 - **AI 联动**：agent 用 `drawio_edit` 改完文件，已经打开的编辑器与预览自动重载；
@@ -69,7 +69,7 @@
 dsh plugin --profile web add https://github.com/imroc/dsh-drawio
 ```
 
-> 这是 roc 的 fork（[上游](https://github.com/jean3690/dsh-drawio)）。本 fork 的关键差异：画板由「自建并排栏 + 左侧栏入口行」改造为**官方右侧栏标签页**。
+> 这是 roc 的 fork（[上游](https://github.com/jean3690/dsh-drawio)）。本 fork 的关键差异：画板由「自建并排栏 + 左侧栏入口行」改造为**官方右侧栏标签页**；0.2.0 起 `boardAutoOpen` 默认关闭——AI 改图不再自动弹侧栏。
 
 重启 `dsh web` 后生效：右侧栏多出「Drawio 画板」标签页、会话标题栏右上角多出画板按钮，`drawio_*` 工具进入模型工具集，skill 自动可加载，内置 drawio webapp 挂在 `/drawio/*`。
 
@@ -87,7 +87,10 @@ dsh plugin --profile web add https://github.com/imroc/dsh-drawio
     agentTools: [ 'drawio_validate', 'drawio_render', 'drawio_template', 'drawio_edit' ]
     pngScale: 2      # drawio_render 的 PNG 预览倍率（默认 2）
     fontFamily: "Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif"
+    boardAutoOpen: false   # AI 改图时是否自动弹开右侧栏画板（默认 false）
 ```
+
+`boardAutoOpen` 只是**新浏览器的默认值**：画板工具栏的「自动弹出」按钮会把选择写进该浏览器的 `localStorage` 并优先生效，改完立刻作用于下一次改图，不用重启宿主。
 
 ## 典型用法
 
@@ -131,7 +134,8 @@ npm test            # 冒烟 / 边界 / 结构化改图 / 工作区根解析 等
 | `src/client/narrow.ts` | 窄视口判定（matchMedia，与侧栏自己的 768px 断点对齐） |
 | `src/client/board.tsx` | 画板主体：文件列表、预览、源码编辑、缩放、编辑器嵌入 |
 | `src/client/workspace-root.ts` | 画板浏览哪个工作区（会话 cwd 的解析与回退） |
-| `src/client/auto-open.ts` | 什么情况下允许活动事件自己把画板亮出来（重放 / 窄屏不行） |
+| `src/client/auto-open.ts` | 什么情况下允许活动事件自己把画板亮出来（未开启 / 重放 / 窄屏都不行） |
+| `src/client/prefs.ts` | 弹出偏好：本浏览器的开关（`localStorage`）优先于宿主的 `boardAutoOpen` 默认值 |
 
 ## 已知限制
 

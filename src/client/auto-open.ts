@@ -1,7 +1,13 @@
 /**
  * When an agent activity event may reveal the board on its own.
  *
- * Two situations must not:
+ * Three situations must not:
+ *
+ * - **The reveal is switched off.** `boardAutoOpen` is off by default, and the
+ *   board's toolbar carries a per-browser override (`./prefs.ts`). A panel the
+ *   user just closed has to stay closed: the board keeps following the newest
+ *   diagram silently, so opening it by hand lands on the right file. This is
+ *   the only rule the user can change without a reload.
  *
  * - **Replayed history.** The host replays up to ten minutes of recent
  *   activity to every new SSE subscriber, so a page that loads after a
@@ -23,10 +29,12 @@ export const NARROW_VIEWPORT_PX = 767
 
 /**
  * Decide whether one activity event may reveal the board.
- * @param input - whether the event is replay, and the current viewport width.
+ * @param input - whether the reveal is enabled, whether the event is replay,
+ *   and the current viewport width.
  * @returns true when the board may open itself.
  */
-export function shouldAutoOpen(input: { replay: boolean; viewportWidth: number }): boolean {
+export function shouldAutoOpen(input: { enabled: boolean; replay: boolean; viewportWidth: number }): boolean {
+  if (!input.enabled) return false
   if (input.replay) return false
   return input.viewportWidth > NARROW_VIEWPORT_PX
 }

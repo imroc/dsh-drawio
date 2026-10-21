@@ -11,6 +11,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type { DrawioEnvelope } from './protocol.ts'
+import type { Config } from './config.ts'
 import type { DrawioService, DrawioOpResult } from './service.ts'
 import { listWorkspaceRoots } from './service.ts'
 import { subscribeDrawioEvents } from './events.ts'
@@ -106,9 +107,12 @@ function respond(res: ServerResponse, result: DrawioOpResult): void {
  * Register the /dsh-drawio routes (POST JSON operations).
  * @param ctx - context carrying the webServer service.
  * @param service - the gated filesystem service.
+ * @param getConfig - reads the resolved loader config. The browser half cannot
+ *   read loader config (client plugin entries carry none), so the reveal
+ *   policy has to reach it over `/dsh-drawio/config`.
  * @returns the route disposer.
  */
-export function registerDrawioRoutes(ctx: Context, service: DrawioService): () => void {
+export function registerDrawioRoutes(ctx: Context, service: DrawioService, getConfig: () => Config): () => void {
   const handler = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     // Loopback fence first: never let a LAN client reach any /dsh-drawio
     // operation, regardless of method or content-type.
@@ -126,6 +130,13 @@ export function registerDrawioRoutes(ctx: Context, service: DrawioService): () =
     // `?url=` loader. Loopback-fenced + workspace-gated.
     if (req.method === 'GET') {
       const url = new URL(req.url ?? '/', 'http://x')
+      if (url.pathname === '/dsh-drawio/config') {
+        // The reveal policy for the browser half. Not a secret (it is the
+        // user's own toggle), but it still rides the loopback fence above.
+        const config = getConfig()
+        json(res, { ok: true, value: { boardAutoOpen: config.boardAutoOpen } })
+        return
+      }
       if (url.pathname === '/dsh-drawio/events') {
         // SSE: drawio activity broadcast (auto-open the board when the agent
         // draws). Loopback-fenced above; keep-alive so proxies don't drop it.

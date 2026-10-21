@@ -189,10 +189,12 @@ assert.equal(typeof noteActivityRoot, 'function')
 
 // --- auto-open policy
 assert.equal(NARROW_VIEWPORT_PX, 767)
-assert.equal(shouldAutoOpen({ replay: false, viewportWidth: 1440 }), true, 'a live event may open the board on a wide screen')
-assert.equal(shouldAutoOpen({ replay: true, viewportWidth: 1440 }), false, 'a replayed event must never pop the board')
-assert.equal(shouldAutoOpen({ replay: true, viewportWidth: 390 }), false)
-assert.equal(shouldAutoOpen({ replay: false, viewportWidth: 390 }), false, 'a phone must not have the screen taken over')
-assert.equal(shouldAutoOpen({ replay: false, viewportWidth: 768 }), true, 'the breakpoint is exclusive: 768 is a wide screen')
+const wide = { enabled: true, replay: false, viewportWidth: 1440 }
+assert.equal(shouldAutoOpen(wide), true, 'an enabled live event may open the board on a wide screen')
+assert.equal(shouldAutoOpen({ ...wide, enabled: false }), false, 'the reveal switch wins over every other consideration')
+assert.equal(shouldAutoOpen({ ...wide, replay: true }), false, 'a replayed event must never pop the board')
+assert.equal(shouldAutoOpen({ enabled: true, replay: true, viewportWidth: 390 }), false)
+assert.equal(shouldAutoOpen({ enabled: true, replay: false, viewportWidth: 390 }), false, 'a phone must not have the screen taken over')
+assert.equal(shouldAutoOpen({ enabled: true, replay: false, viewportWidth: 768 }), true, 'the breakpoint is exclusive: 768 is a wide screen')
 
 console.log('workspace-root: ok')

@@ -82,6 +82,9 @@ export default defineConfig([
     entry: {
       'workspace-root': 'src/client/workspace-root.ts',
       'auto-open': 'src/client/auto-open.ts',
+      // The per-browser preference store (toggle override vs host default):
+      // pure, storage-injectable, and the precedence is what test/prefs.mjs pins.
+      'prefs': 'src/client/prefs.ts',
       // The narrow-screen sheet is a pure decision (a CSS string) that carries
       // a regression guard: see test/narrow-styles.mjs.
       'narrow-styles': 'src/client/narrow-styles.ts',

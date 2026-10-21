@@ -18,6 +18,17 @@ export interface Config {
   pngScale: number
   /** Label font family list. */
   fontFamily: string
+  /**
+   * Whether agent drawing activity may open the board on its own (reveal the
+   * right Sidebar and focus the 画板 tab).
+   *
+   * Off by default: an unprompted panel that comes back every time the agent
+   * touches a diagram fights the user who just closed it. The board still
+   * follows the newest diagram silently, so opening it by hand lands on the
+   * right file. The board's own toolbar carries a per-browser override, so
+   * this only sets the default for fresh browsers.
+   */
+  boardAutoOpen: boolean
 }
 
 export const DEFAULT_FONT_FAMILY = "Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif"
@@ -27,6 +38,7 @@ export interface RawConfig {
   agentTools?: unknown
   pngScale?: unknown
   fontFamily?: unknown
+  boardAutoOpen?: unknown
 }
 
 /** Apply defaults to the raw loader config. */
@@ -43,7 +55,9 @@ export function resolveConfig(raw: RawConfig | undefined): Config {
   const fontFamily = typeof raw?.fontFamily === 'string' && raw.fontFamily !== ''
     ? raw.fontFamily
     : DEFAULT_FONT_FAMILY
-  return { agentTools: tools, pngScale, fontFamily }
+  // Only an explicit `true` turns the unprompted reveal back on.
+  const boardAutoOpen = raw?.boardAutoOpen === true
+  return { agentTools: tools, pngScale, fontFamily, boardAutoOpen }
 }
 
 /** Whether a tool id is exposed by the config. */

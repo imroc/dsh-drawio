@@ -45,7 +45,7 @@ The board is **not** a panel of its own: it is a tab of DSH's own right Sidebar,
   - the **board button in the conversation header** (next to the Sidebar's own expand control) — one click opens the Sidebar with the board in it (wide viewports);
   - the **Drawio board** entry in the right Sidebar's **+** (new tab) list;
   - **on a phone**, the **Drawio board** row in the navigation Sidebar (the drawer) — it opens the board and dismisses the drawer. A phone has no room side by side, so the Sidebar switches to its **full-screen panel** (the product's own design), the board fills the screen, and the board toolbar's "Close board" is the way out.
-- **How it follows the agent.** A *live* agent edit reveals the board by itself on a wide screen, so you can watch it draw; **replayed** history only updates the content and never pops the panel open (otherwise every reload would reopen a board you had just closed), and a narrow screen never auto-opens it (that would interrupt your typing). Either way the board quietly follows the newest file the agent touched — open it and it is already there.
+- **How it follows the agent — without taking the screen.** The board quietly follows the newest file the agent touched, so opening it by hand lands on the current diagram; it never pops open on its own (`boardAutoOpen: false` by default). To watch it draw, hit **Popup:ON** in the board toolbar — that choice is remembered per browser (`localStorage`) and can be clicked back at any time. Even when it is on, **replayed** history never opens the panel (otherwise every reload would reopen a board you had just closed) and a narrow screen never does (that would interrupt your typing).
 - Lists every `.drawio` file in the workspace (recursive, depth- and count-bounded); picking one renders it.
 - **The official drawio editor, embedded**: pick a file → "Open in editor" → the bundled diagrams.net webapp (local `assets/`, **works offline**) → drag nodes, draw edges, restyle; File → Save posts back through a bridge and writes the workspace file (the board's XML and preview sync immediately).
 - **Agent linkage**: when the agent changes a file with `drawio_edit`, an open editor and the preview reload by themselves.
@@ -70,7 +70,7 @@ The pure-TypeScript translator (shared by host and browser) covers:
 dsh plugin --profile web add https://github.com/imroc/dsh-drawio
 ```
 
-> This is roc's fork of [`jean3690/dsh-drawio`](https://github.com/jean3690/dsh-drawio). The significant difference: the board was reworked from a self-built side column (with an entry row in the left Sidebar) into a **tab of DSH's own right Sidebar**.
+> This is roc's fork of [`jean3690/dsh-drawio`](https://github.com/jean3690/dsh-drawio). The significant differences: the board was reworked from a self-built side column (with an entry row in the left Sidebar) into a **tab of DSH's own right Sidebar**, and since 0.2.0 `boardAutoOpen` defaults to off — agent drawing no longer pops the Sidebar open.
 
 Restart `dsh web` and it is live: a Drawio board tab in the right Sidebar, a board button in the conversation header corner, the `drawio_*` tools in the model's tool set, the skill loadable, and the bundled drawio webapp served under `/drawio/*`.
 
@@ -88,7 +88,10 @@ The plugin's own `cordis.patch.yml` carries the defaults; overriding them means 
     agentTools: [ 'drawio_validate', 'drawio_render', 'drawio_template', 'drawio_edit' ]
     pngScale: 2      # PNG preview scale for drawio_render (default 2)
     fontFamily: "Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif"
+    boardAutoOpen: false   # reveal the board when the agent draws (default false)
 ```
+
+`boardAutoOpen` is only the default for a browser that never used the toggle: the board toolbar's **Popup** button writes the choice to that browser's `localStorage` and wins over it, taking effect on the next diagram without a host restart.
 
 ## Typical use
 
@@ -132,7 +135,8 @@ Layout:
 | `src/client/narrow.ts` | The narrow-viewport flag (`matchMedia`, aligned with the Sidebar's own 768px breakpoint) |
 | `src/client/board.tsx` | The board itself: file list, preview, source editor, zoom, embedded editor |
 | `src/client/workspace-root.ts` | Which workspace the board browses (session cwd resolution and fallback) |
-| `src/client/auto-open.ts` | When an activity event may reveal the board by itself (never on replay, never on a narrow screen) |
+| `src/client/auto-open.ts` | When an activity event may reveal the board by itself (only when enabled, never on replay, never on a narrow screen) |
+| `src/client/prefs.ts` | The reveal preference: per-browser toggle override (`localStorage`) over the host's `boardAutoOpen` default |
 
 ## Known limitations
 

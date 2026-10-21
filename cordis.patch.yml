@@ -19,3 +19,8 @@
         pngScale: 2
         # Edge/vertex label font fallback list (CSS font-family).
         fontFamily: "Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif"
+        # Whether agent drawing activity may open the board in the right
+        # Sidebar on its own. Default false: the board keeps following the
+        # newest diagram silently, the panel opens only when you ask for it.
+        # The 画板 toolbar's 「自动弹出」 button overrides this per browser.
+        boardAutoOpen: false

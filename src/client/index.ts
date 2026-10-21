@@ -24,6 +24,7 @@ import { subscribeDrawioEvents } from './events.ts'
 import { queueOpenPath } from './open-queue.ts'
 import { noteActivityRoot } from './workspace-root.ts'
 import { shouldAutoOpen } from './auto-open.ts'
+import { autoOpenEnabled, setHostAutoOpen } from './prefs.ts'
 import { mountHeaderEntry } from './header-entry.ts'
 import { mountDrawioSidebarTab, TAB_KIND } from './sidebar-tab.tsx'
 import { installNarrowStyles } from './narrow-styles.ts'
@@ -73,6 +74,27 @@ function readFontFamily(): string {
     return value !== '' ? value : fallback
   } catch {
     return fallback
+  }
+}
+
+/**
+ * Learn the host's reveal policy once, over the plugin's own route.
+ *
+ * Client plugin entries are created with a name and nothing else (see
+ * `dsh-client-modules`), so the browser half cannot read the loader config the
+ * host applied. `/dsh-drawio/config` is that bridge. It settles asynchronously
+ * and a failure is silent: the prefs default (off) stands, which is the
+ * non-intrusive direction.
+ */
+async function loadHostAutoOpen(): Promise<void> {
+  try {
+    const response = await fetch('/dsh-drawio/config', { headers: { accept: 'application/json' } })
+    const envelope = await response.json() as { ok?: boolean; value?: { boardAutoOpen?: unknown } }
+    if (envelope.ok === true && typeof envelope.value?.boardAutoOpen === 'boolean') {
+      setHostAutoOpen(envelope.value.boardAutoOpen)
+    }
+  } catch {
+    // Route missing (older host) or offline: keep the safe default.
   }
 }
 
@@ -154,10 +176,15 @@ export async function apply(ctx: ClientContext): Promise<void> {
     if (typeof activity.path === 'string' && activity.path !== '') {
       queueOpenPath(activity.path, activity.root)
     }
-    if (shouldAutoOpen({ replay, viewportWidth: viewportWidth() })) {
+    if (shouldAutoOpen({ enabled: autoOpenEnabled(), replay, viewportWidth: viewportWidth() })) {
       controller.reveal()
     }
   }))
+
+  // The host default for the reveal policy. Read before the subscription is
+  // used rather than after: the first live event may arrive while the fetch is
+  // still in flight, and an unknown default has to mean "do not pop".
+  void loadHostAutoOpen()
 
   ctx.effect(() => () => {
     for (const dispose of disposers.splice(0)) {

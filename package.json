@@ -1,6 +1,6 @@
 {
   "name": "dsh-drawio",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "DSH drawio 插件：agent 画图工具（drawio_template / drawio_edit / drawio_validate / drawio_render）+ 官方右侧栏的「Drawio 画板」标签页——mxfile XML 实时渲染为 SVG、导出 PNG、写入工作区。核心翻译器为纯 TS 零依赖，宿主与浏览器共用。",
   "type": "module",
   "main": "./lib/index.js",
@@ -84,7 +84,7 @@
   },
   "scripts": {
     "build": "node scripts/prepare.mjs",
-    "test": "node test/smoke.mjs && node test/edge.mjs && node test/edit.mjs && node test/workspace-root.mjs && node test/host-roots.mjs && node test/narrow-styles.mjs",
+    "test": "node test/smoke.mjs && node test/edge.mjs && node test/edit.mjs && node test/workspace-root.mjs && node test/prefs.mjs && node test/host-roots.mjs && node test/narrow-styles.mjs",
     "typecheck": "tsc --noEmit",
     "watch": "tsdown --watch",
     "prepublishOnly": "npm run build"
