@@ -45,7 +45,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 export const NS = 'drawio'
 
 /** Plugin name: matches the package name, the graph row id, and the bundle id. */
-export const name = 'dsh-drawio'
+export const name = '@imrocchan/dsh-drawio'
 
 /** Services the surfaces read. */
 export const inject = ['slots', 'locale', 'sessions']

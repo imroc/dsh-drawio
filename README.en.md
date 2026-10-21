@@ -67,6 +67,10 @@ The pure-TypeScript translator (shared by host and browser) covers:
 ## Install
 
 ```bash
+# Recommended: the npm package (published as @imrocchan/dsh-drawio with build artifacts, works right after install)
+dsh plugin --profile web add @imrocchan/dsh-drawio
+
+# or from source (run `npm run build` first, see Development)
 dsh plugin --profile web add https://github.com/imroc/dsh-drawio
 ```
 

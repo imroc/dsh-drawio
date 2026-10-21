@@ -29,7 +29,7 @@ import { serveStaticDir } from './static.ts'
 import { DiagramWatchService } from './watch.ts'
 import { buildAgentTools } from './tools.ts'
 
-export const name = 'dsh-drawio'
+export const name = '@imrocchan/dsh-drawio'
 
 /** Hard services: the tool registry + workspace registry + web server + attachments. */
 export const inject = ['tools', 'workspaceRegistry', 'webServer', 'loader', 'attachments']

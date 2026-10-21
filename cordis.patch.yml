@@ -5,12 +5,13 @@
 # "./client", served at /plugins/dsh-drawio/client.js) load in the web GUI — that
 # half registers the 画板 as a tab of the official right Sidebar.
 #
-# Activate with: dsh plugin --profile web add https://github.com/imroc/dsh-drawio
+# Activate with: dsh plugin --profile web add @imrocchan/dsh-drawio
+# (or the source: dsh plugin --profile web add https://github.com/imroc/dsh-drawio)
 # (or a local link: dependency, which is how it is developed — `lib/` is
 # gitignored and there is no prepare script, so a git install carries no build).
 - insert:
     - id: dsh-drawio
-      name: dsh-drawio
+      name: '@imrocchan/dsh-drawio'
       config:
         # Agent-visible drawio tools. '*' = expose all built-ins; [] = none.
         # Built-ins: drawio_template, drawio_edit, drawio_validate, drawio_render.

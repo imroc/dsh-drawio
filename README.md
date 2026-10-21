@@ -66,6 +66,10 @@
 ## 安装
 
 ```bash
+# 推荐：npm 包（已发布 @imrocchan/dsh-drawio，带构建产物，装完即用）
+dsh plugin --profile web add @imrocchan/dsh-drawio
+
+# 或从源码装（需要先 npm run build，见「开发」）
 dsh plugin --profile web add https://github.com/imroc/dsh-drawio
 ```
 

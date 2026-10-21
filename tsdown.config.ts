@@ -19,7 +19,7 @@ import { defineConfig } from 'tsdown'
 import { transform } from 'lightningcss'
 
 /** Plugin id: the cordis.yml bare row name, the graph row id, and the stamped bundle id must all match. */
-const PLUGIN_ID = 'dsh-drawio'
+const PLUGIN_ID = '@imrocchan/dsh-drawio'
 
 /**
  * Module specifiers the shell shares into the frozen browser module table
